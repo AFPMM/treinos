@@ -3,7 +3,6 @@
   "short_name": "Treinos",
   "description": "Registo de treinos e peso",
   "start_url": "/treinos/",
-  "scope": "/treinos/",
   "display": "standalone",
   "background_color": "#0f0f1a",
   "theme_color": "#0f0f1a",
