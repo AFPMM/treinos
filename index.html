@@ -996,23 +996,27 @@ function renderBodyChart(){
 function renderWeightAnalysis(sorted){
   var wrap=document.getElementById('weight-analysis');
   if(!wrap)return;
-  if(!sorted||sorted.length<2){
-    wrap.innerHTML='<div class="card card-pad" style="color:var(--muted);font-size:14px;text-align:center">Precisa de pelo menos 2 registos.</div>';
+  if(!sorted||sorted.length<1){
+    wrap.innerHTML='<div class="card card-pad" style="color:var(--muted);font-size:14px;text-align:center">Sem registos ainda.</div>';
     return;
   }
   var hh=getHeight();
-  var now=new Date();
-  // Periods
   var c7=new Date();c7.setDate(c7.getDate()-7);
   var c30=new Date();c30.setDate(c30.getDate()-30);
   var c90=new Date();c90.setDate(c90.getDate()-90);
-  var r7=sorted.filter(function(w){return new Date(w.date)>=c7});
-  var r30=sorted.filter(function(w){return new Date(w.date)>=c30});
-  var r90=sorted.filter(function(w){return new Date(w.date)>=c90});
   var first=sorted[0],last=sorted[sorted.length-1];
-  var totalDiff=last.kg-first.kg;
   var totalDays=Math.round((new Date(last.date)-new Date(first.date))/(1000*60*60*24));
-  var weekRate=totalDays>0?(totalDiff/totalDays*7):0;
+  var weekRate=totalDays>0?((last.kg-first.kg)/totalDays*7):0;
+
+  // For each period: find oldest entry in period vs latest
+  function periodDiff(cutoff){
+    var inPeriod=sorted.filter(function(w){return new Date(w.date)>=cutoff;});
+    if(inPeriod.length>=2) return inPeriod[inPeriod.length-1].kg-inPeriod[0].kg;
+    // fallback: use last entry before cutoff as baseline
+    var before=sorted.filter(function(w){return new Date(w.date)<cutoff;});
+    if(before.length>0&&inPeriod.length>=1) return inPeriod[inPeriod.length-1].kg-before[before.length-1].kg;
+    return null;
+  }
 
   function statRow(label,val,unit,color){
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border)">'
@@ -1020,37 +1024,36 @@ function renderWeightAnalysis(sorted){
       +'<span style="font-size:15px;font-weight:600;font-family:\'DM Mono\',monospace;color:'+(color||'var(--text)')+'">'+val+' <span style="font-size:11px;font-weight:400;color:var(--muted)">'+unit+'</span></span>'
       +'</div>';
   }
-  function diff(arr){if(arr.length<2)return null;return arr[arr.length-1].kg-arr[0].kg;}
   function fmtDiff(v){if(v===null)return'—';return(v>0?'+':'')+v.toFixed(1);}
   function diffColor(v){if(v===null)return'var(--muted)';return v<=0?'var(--green)':'var(--red)';}
 
-  var d7=diff(r7),d30=diff(r30),d90=diff(r90),dAll=totalDiff;
+  var d7=periodDiff(c7),d30=periodDiff(c30),d90=periodDiff(c90);
+  var dAll=sorted.length>=2?last.kg-first.kg:null;
   var minAll=Math.min.apply(null,sorted.map(function(w){return w.kg;}));
   var maxAll=Math.max.apply(null,sorted.map(function(w){return w.kg;}));
   var avgAll=(sorted.reduce(function(s,w){return s+w.kg;},0)/sorted.length);
 
-  // Ideal weight range for height (BMI 18.5-24.9)
   var hm=hh/100;
   var idealMin=(18.5*hm*hm).toFixed(1);
   var idealMax=(24.9*hm*hm).toFixed(1);
   var currentBmi=calcBMI(last.kg,hh);
-  var kgToIdeal=last.kg>parseFloat(idealMax)?-(last.kg-parseFloat(idealMax)):last.kg<parseFloat(idealMin)?parseFloat(idealMin)-last.kg:0;
+  var kgToIdeal=last.kg>parseFloat(idealMax)?last.kg-parseFloat(idealMax):0;
 
   wrap.innerHTML='<div class="card" style="margin:0 16px 12px;overflow:hidden">'
     +statRow('Variação 7 dias',fmtDiff(d7),'kg',diffColor(d7))
     +statRow('Variação 30 dias',fmtDiff(d30),'kg',diffColor(d30))
     +statRow('Variação 90 dias',fmtDiff(d90),'kg',diffColor(d90))
-    +statRow('Total ('+totalDays+'d)',fmtDiff(dAll),'kg',diffColor(dAll))
+    +(dAll!==null?statRow('Total ('+totalDays+'d)',fmtDiff(dAll),'kg',diffColor(dAll)):'')
     +'<div style="height:1px;background:var(--border2);margin:4px 0"></div>'
     +statRow('Mínimo histórico',minAll.toFixed(1),'kg','var(--green)')
     +statRow('Máximo histórico',maxAll.toFixed(1),'kg','var(--red)')
     +statRow('Média',avgAll.toFixed(1),'kg')
-    +statRow('Ritmo semanal',(weekRate>0?'+':'')+weekRate.toFixed(2),'kg/sem',weekRate<=0?'var(--green)':'var(--red)')
+    +(totalDays>0?statRow('Ritmo semanal',(weekRate>0?'+':'')+weekRate.toFixed(2),'kg/sem',weekRate<=0?'var(--green)':'var(--red)'):'')
     +'<div style="height:1px;background:var(--border2);margin:4px 0"></div>'
     +statRow('IMC atual',currentBmi.toFixed(1),'',bmiBand(currentBmi).color)
     +statRow('Intervalo saudável',idealMin+'–'+idealMax,'kg','var(--muted)')
-    +(kgToIdeal!==0?statRow('Para peso saudável',kgToIdeal.toFixed(1),'kg a perder','var(--amber)'):'')
-    +'<div style="padding:10px 16px;font-size:11px;color:var(--muted)">'+sorted.length+' registos · desde '+fmtD(first.date)+'</div>'
+    +(kgToIdeal>0?statRow('A perder para ideal',kgToIdeal.toFixed(1),'kg','var(--amber)'):'<div style="padding:10px 16px;font-size:12px;color:var(--green)">✅ Dentro do intervalo saudável!</div>')
+    +'<div style="padding:8px 16px 12px;font-size:11px;color:var(--muted)">'+sorted.length+' registo'+(sorted.length>1?'s':'')+' · desde '+fmtD(first.date)+'</div>'
     +'</div>';
 }
 
