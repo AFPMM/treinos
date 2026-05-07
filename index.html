@@ -382,7 +382,7 @@ textarea{resize:none;line-height:1.5}
 
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, doc, setDoc, deleteDoc, getDoc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const db = getFirestore(initializeApp({
   apiKey:"AIzaSyANmmKuqkcXqvuwqJYHyyyn0jXIyGR9zZU",
@@ -465,9 +465,11 @@ function isDuplicateWorkout(type, date, recId){
 }
 
 // ─── WITHINGS ─────────────────────────────────────────────
-function getWT(){return JSON.parse(localStorage.getItem('wt')||'null')}
-function setWT(t){localStorage.setItem('wt',JSON.stringify(t))}
-function clearWT(){localStorage.removeItem('wt')}
+var _wtCache=null;
+function getWT(){return _wtCache||JSON.parse(localStorage.getItem('wt')||'null')}
+async function setWT(t){_wtCache=t;localStorage.setItem('wt',JSON.stringify(t));try{await setDoc(doc(db,'settings','withingsToken'),{token:JSON.stringify(t)});}catch(e){}}
+async function clearWT(){_wtCache=null;localStorage.removeItem('wt');try{await deleteDoc(doc(db,'settings','withingsToken'));}catch(e){}}
+async function loadWTFromFirebase(){try{var snap=await getDoc(doc(db,'settings','withingsToken'));if(snap.exists()){var t=JSON.parse(snap.data().token);_wtCache=t;localStorage.setItem('wt',JSON.stringify(t));return t;}}catch(e){}return null;}
 
 window.connectWithings=function(){
   var state=Math.random().toString(36).slice(2);
@@ -1225,7 +1227,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(
 handleWCallback();
 renderHome();
 setTimeout(checkTodayNotifs,1500);
-setTimeout(function(){if(getWT())syncWithings()},2000);
+loadWTFromFirebase().then(function(){setTimeout(function(){if(getWT())syncWithings();},1000);});
 </script>
 </body>
 </html>
