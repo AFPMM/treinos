@@ -39,7 +39,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(-
 .screens{flex:1;overflow:hidden;position:relative}
 .screen{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav-h) + var(--safe-bot) + 10px);display:none;opacity:0;transition:opacity 0.2s}
 .screen.active{display:block;opacity:1}
-.nav{flex-shrink:0;height:calc(var(--nav-h) + var(--safe-bot));padding-bottom:var(--safe-bot);background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:flex-start;padding-top:8px}
+.nav{flex-shrink:0;height:calc(var(--nav-h) + var(--safe-bot));padding-bottom:calc(var(--safe-bot) + 2px);background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:flex-start;padding-top:8px}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:var(--muted);cursor:pointer;font-family:inherit;font-size:10px;font-weight:500;padding:4px 0;transition:color 0.15s}
 .nav-btn svg{width:24px;height:24px}
 .nav-btn.active{color:var(--accent-lt)}
@@ -199,24 +199,22 @@ textarea{resize:none;line-height:1.5}
         </div>
       </div>
 
-      <div class="section-label" style="padding-bottom:4px">Semana <span id="week-range-label" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px"></span></div>
-      <div style="position:relative;padding:0 28px">
-        <button class="week-nav week-nav-l" onclick="weekNav(-1)">‹</button>
-        <div class="week-strip-wrap" style="padding:0">
+      <div class="week-strip-wrap">
           <div class="week-strip" id="week-strip">
             <div class="week-page" id="week-page-0"></div>
             <div class="week-page" id="week-page-1"></div>
             <div class="week-page" id="week-page-2"></div>
           </div>
         </div>
-        <button class="week-nav week-nav-r" onclick="weekNav(1)">›</button>
-      </div>
-      <div class="week-page-dots">
-        <div class="week-page-dot" id="wpd-0"></div>
-        <div class="week-page-dot" id="wpd-1"></div>
-        <div class="week-page-dot" id="wpd-2"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 16px 2px">
+        <button onclick="weekNav(-1)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:13px;font-weight:500;padding:7px 16px;cursor:pointer;font-family:inherit;touch-action:manipulation">← Anterior</button>
+        <span id="week-range-label" style="font-size:11px;color:var(--muted)"></span>
+        <button onclick="weekNav(1)" style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-size:13px;font-weight:500;padding:7px 16px;cursor:pointer;font-family:inherit;touch-action:manipulation">Próxima →</button>
       </div>
 
+      <div style="padding:6px 16px 8px">
+        <button onclick="openTodayQuickAdd()" style="width:100%;padding:13px;background:var(--accent);border:none;border-radius:14px;color:white;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;touch-action:manipulation;letter-spacing:-0.2px">+ Adicionar treino</button>
+      </div>
       <div class="day-panel" id="day-panel">
         <div class="day-panel-header">
           <div class="day-panel-title" id="day-panel-title">—</div>
@@ -224,11 +222,11 @@ textarea{resize:none;line-height:1.5}
         </div>
         <div id="quick-add-panel" style="display:none;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--bg3)">
           <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px">
-            <button class="quick-type-btn" onclick="quickSelType('natacao-aula')" id="qtb-natacao-aula"><span>🏊</span><span>Aula</span></button>
-            <button class="quick-type-btn" onclick="quickSelType('natacao-livre')" id="qtb-natacao-livre"><span>🌊</span><span>Livre</span></button>
-            <button class="quick-type-btn" onclick="quickSelType('reformer')" id="qtb-reformer"><span>🧘</span><span>Pilates</span></button>
-            <button class="quick-type-btn" onclick="quickSelType('funcional')" id="qtb-funcional"><span>💪</span><span>Funcional</span></button>
-            <button class="quick-type-btn" onclick="quickSelType('outra')" id="qtb-outra"><span>✏️</span><span>Outra</span></button>
+            <button class="quick-type-btn" data-type="natacao-aula" id="qtb-natacao-aula"><span>🏊</span><span>Aula</span></button>
+            <button class="quick-type-btn" data-type="natacao-livre" id="qtb-natacao-livre"><span>🌊</span><span>Livre</span></button>
+            <button class="quick-type-btn" data-type="reformer" id="qtb-reformer"><span>🧘</span><span>Pilates</span></button>
+            <button class="quick-type-btn" data-type="funcional" id="qtb-funcional"><span>💪</span><span>Funcional</span></button>
+            <button class="quick-type-btn" data-type="outra" id="qtb-outra"><span>✏️</span><span>Outra</span></button>
           </div>
           <div id="quick-outra-field" style="display:none;margin-bottom:10px">
             <input type="text" id="quick-outra-name" placeholder="Nome da atividade" style="font-size:14px">
@@ -238,11 +236,10 @@ textarea{resize:none;line-height:1.5}
               <option value="30">30 min</option>
               <option value="40">40 min</option>
               <option value="45">45 min</option>
+              <option value="50">50 min</option>
               <option value="60" selected>60 min</option>
-              <option value="90">90 min</option>
-              <option value="0">Nao sei</option>
             </select>
-            <button onclick="quickSave()" style="flex:2;padding:11px;background:var(--accent);border:none;border-radius:12px;color:white;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;touch-action:manipulation">Guardar</button>
+            <button id="quick-save-btn" style="flex:2;padding:11px;background:var(--accent);border:none;border-radius:12px;color:white;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;touch-action:manipulation">Guardar</button>
           </div>
         </div>
         <div id="day-panel-body"></div>
@@ -397,7 +394,7 @@ onAuthStateChanged(auth, function(user){
 
 const WITHINGS_CLIENT_ID='eaa2c00e2d9bf48ff59172361d2345b18fc9301a3763c81cdc80db0b48b9452d';
 const WITHINGS_SECRET='ddf0366c973b8da9300361c6315beeea44486563584d0b449610fa4ca667d5df';
-const WITHINGS_REDIRECT='https://afpmm.github.io/treinos';
+const WITHINGS_REDIRECT='https://afpmm.github.io/treinos/';
 
 var workouts=[], weightLog=[], bodyMetrics={fat:[],muscle:[],bmi:[]};
 var recurring=JSON.parse(localStorage.getItem('recurring')||'[]');
@@ -471,7 +468,18 @@ var _wtCache=null;
 function getWT(){return _wtCache||JSON.parse(localStorage.getItem('wt')||'null')}
 async function setWT(t){_wtCache=t;localStorage.setItem('wt',JSON.stringify(t));try{await setDoc(doc(db,'settings','withingsToken'),{token:JSON.stringify(t)});}catch(e){}}
 async function clearWT(){_wtCache=null;localStorage.removeItem('wt');try{await deleteDoc(doc(db,'settings','withingsToken'));}catch(e){}}
-async function loadWTFromFirebase(){try{var snap=await getDoc(doc(db,'settings','withingsToken'));if(snap.exists()){var t=JSON.parse(snap.data().token);_wtCache=t;localStorage.setItem('wt',JSON.stringify(t));return t;}}catch(e){}return null;}
+async function loadWTFromFirebase(){
+  try{
+    var snap=await getDoc(doc(db,'settings','withingsToken'));
+    if(snap.exists()){
+      var t=JSON.parse(snap.data().token);
+      _wtCache=t;
+      localStorage.setItem('wt',JSON.stringify(t));
+      return t;
+    }
+  }catch(e){}
+  return null;
+}
 
 window.connectWithings=function(){
   var state=Math.random().toString(36).slice(2);
@@ -695,6 +703,12 @@ window.openAddSheetForDay=function(){
 };
 
 var quickType_=null;
+// Use event delegation for quick type buttons - avoids onclick quote issues
+document.addEventListener('click', function(e){
+  var btn=e.target.closest('.quick-type-btn');
+  if(btn&&btn.dataset.type) quickSelType(btn.dataset.type);
+  if(e.target.id==='quick-save-btn') quickSave();
+});
 window.openTodayQuickAdd=function(){
   // Select today, open day panel, show quick add
   var todayKey=dk(new Date());
@@ -1308,7 +1322,22 @@ if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(
 handleWCallback();
 renderHome();
 setTimeout(checkTodayNotifs,1500);
-loadWTFromFirebase().then(function(){setTimeout(function(){if(getWT())syncWithings();},1000);});
+
+// Load token from Firestore on startup, validate it, then sync
+loadWTFromFirebase().then(async function(t){
+  if(!t) return; // not connected
+  // Try to get a valid token (refreshes if expired)
+  var valid = await getValidToken();
+  if(valid){
+    // Sync in background, don't block UI
+    setTimeout(function(){syncWithings();}, 1500);
+  } else {
+    // Token couldn't be refreshed - clear it and ask user to reconnect
+    showToast('⚖️ Sessão Withings expirada — reconecta');
+    renderHome();
+    renderWeight();
+  }
+});
 </script>
 </body>
 </html>
