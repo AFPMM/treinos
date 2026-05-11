@@ -162,6 +162,10 @@ textarea{resize:none;line-height:1.5}
 .metric-tabs{display:flex;gap:6px;padding:0 16px;margin-bottom:10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .metric-tab{padding:7px 14px;border-radius:20px;border:1px solid var(--border2);background:var(--bg3);color:var(--muted);cursor:pointer;font-family:inherit;font-size:12px;font-weight:500;white-space:nowrap;transition:all 0.15s;flex-shrink:0}
 .metric-tab.active{background:var(--accent-bg);border-color:var(--accent);color:var(--accent-lt)}
+.quick-type-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:12px;border:1.5px solid var(--border2);background:var(--bg2);color:var(--muted);cursor:pointer;font-family:inherit;font-size:10px;font-weight:500;transition:all 0.15s;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.quick-type-btn span:first-child{font-size:24px;line-height:1}
+.quick-type-btn.selected{border-color:var(--accent);background:var(--accent-bg);color:var(--accent-lt)}
+.quick-type-btn:active{transform:scale(0.93)}
 </style>
 </head>
 <body>
@@ -216,7 +220,30 @@ textarea{resize:none;line-height:1.5}
       <div class="day-panel" id="day-panel">
         <div class="day-panel-header">
           <div class="day-panel-title" id="day-panel-title">—</div>
-          <button class="day-panel-add" onclick="openAddSheetForDay()">+ Treino</button>
+          <button class="day-panel-add" onclick="toggleQuickAdd()" id="quick-add-btn">+ Treino</button>
+        </div>
+        <div id="quick-add-panel" style="display:none;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--bg3)">
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px">
+            <button class="quick-type-btn" onclick="quickSelType('natacao-aula')" id="qtb-natacao-aula"><span>🏊</span><span>Aula</span></button>
+            <button class="quick-type-btn" onclick="quickSelType('natacao-livre')" id="qtb-natacao-livre"><span>🌊</span><span>Livre</span></button>
+            <button class="quick-type-btn" onclick="quickSelType('reformer')" id="qtb-reformer"><span>🧘</span><span>Pilates</span></button>
+            <button class="quick-type-btn" onclick="quickSelType('funcional")" id="qtb-funcional"><span>💪</span><span>Funcional</span></button>
+            <button class="quick-type-btn" onclick="quickSelType('outra')" id="qtb-outra"><span>✏️</span><span>Outra</span></button>
+          </div>
+          <div id="quick-outra-field" style="display:none;margin-bottom:10px">
+            <input type="text" id="quick-outra-name" placeholder="Nome da atividade" style="font-size:14px">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="quick-dur" style="flex:1;font-size:14px;padding:10px 12px">
+              <option value="30">30 min</option>
+              <option value="40">40 min</option>
+              <option value="45">45 min</option>
+              <option value="60" selected>60 min</option>
+              <option value="90">90 min</option>
+              <option value="0">Nao sei</option>
+            </select>
+            <button onclick="quickSave()" style="flex:2;padding:11px;background:var(--accent);border:none;border-radius:12px;color:white;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;touch-action:manipulation">Guardar</button>
+          </div>
         </div>
         <div id="day-panel-body"></div>
       </div>
@@ -383,15 +410,21 @@ textarea{resize:none;line-height:1.5}
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, doc, setDoc, deleteDoc, getDoc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-const db = getFirestore(initializeApp({
+const app = initializeApp({
   apiKey:"AIzaSyANmmKuqkcXqvuwqJYHyyyn0jXIyGR9zZU",
   authDomain:"os-meus-treinos.firebaseapp.com",
   projectId:"os-meus-treinos",
   storageBucket:"os-meus-treinos.firebasestorage.app",
   messagingSenderId:"650153514268",
   appId:"1:650153514268:web:820433c27f561b83ca96d9"
-}));
+});
+const db = getFirestore(app);
+const auth = getAuth(app);
+onAuthStateChanged(auth, function(user){
+  if(!user) signInAnonymously(auth).catch(function(e){console.error('Auth error',e)});
+});
 
 const WITHINGS_CLIENT_ID='eaa2c00e2d9bf48ff59172361d2345b18fc9301a3763c81cdc80db0b48b9452d';
 const WITHINGS_SECRET='ddf0366c973b8da9300361c6315beeea44486563584d0b449610fa4ca667d5df';
@@ -690,6 +723,41 @@ function selectDay(key){
 window.openAddSheetForDay=function(){
   addForDate=selectedDayKey;
   openAddSheetInternal();
+};
+
+var quickType_=null;
+window.toggleQuickAdd=function(){
+  var p=document.getElementById('quick-add-panel');
+  var btn=document.getElementById('quick-add-btn');
+  var open=p.style.display==='none';
+  p.style.display=open?'block':'none';
+  btn.textContent=open?'✕ Fechar':'+ Treino';
+  if(open){quickType_=null;document.querySelectorAll('.quick-type-btn').forEach(function(b){b.classList.remove('selected')});document.getElementById('quick-outra-field').style.display='none';}
+};
+window.quickSelType=function(t){
+  quickType_=t;
+  document.querySelectorAll('.quick-type-btn').forEach(function(b){b.classList.remove('selected')});
+  document.getElementById('qtb-'+t).classList.add('selected');
+  document.getElementById('quick-outra-field').style.display=t==='outra'?'block':'none';
+};
+window.quickSave=async function(){
+  if(!quickType_){showToast('⚠️ Escolhe uma atividade');return}
+  var customName=quickType_==='outra'?document.getElementById('quick-outra-name').value.trim():null;
+  if(quickType_==='outra'&&!customName){showToast('⚠️ Escreve o nome');return}
+  var date=selectedDayKey||dk(new Date());
+  var duration=parseInt(document.getElementById('quick-dur').value)||0;
+  // Close panel immediately
+  document.getElementById('quick-add-panel').style.display='none';
+  document.getElementById('quick-add-btn').textContent='+ Treino';
+  try{
+    var existRec=workouts.find(function(w){return w.date===date&&w.type===quickType_&&w.fromRecurring});
+    if(existRec){
+      await fbSaveW(Object.assign({},existRec,{duration:duration,fromRecurring:true}));
+    } else {
+      await fbSaveW({id:Date.now().toString(),type:quickType_,customName:customName,date:date,duration:duration,notes:'',fromRecurring:false});
+    }
+    showToast('✓ Treino guardado!');
+  }catch(e){showToast('⚠️ Erro ao guardar — tenta de novo')}
 };
 
 // ─── HOME ─────────────────────────────────────────────────
