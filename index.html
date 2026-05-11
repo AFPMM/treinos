@@ -493,7 +493,7 @@ async function handleWCallback(){
   var code=p.get('code'),state=p.get('state');
   if(!code)return;
   if(state!==localStorage.getItem('wstate')){showToast('Erro de segurança');return}
-  window.history.replaceState({},'','/treinos/');
+  window.history.replaceState({},'','/treinos');
   showToast('⏳ A ligar à Withings…');
   try{
     var r=await fetch('https://wbsapi.withings.net/v2/oauth2',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({action:'requesttoken',grant_type:'authorization_code',client_id:WITHINGS_CLIENT_ID,client_secret:WITHINGS_SECRET,code:code,redirect_uri:WITHINGS_REDIRECT})});
