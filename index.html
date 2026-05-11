@@ -227,7 +227,7 @@ textarea{resize:none;line-height:1.5}
             <button class="quick-type-btn" onclick="quickSelType('natacao-aula')" id="qtb-natacao-aula"><span>🏊</span><span>Aula</span></button>
             <button class="quick-type-btn" onclick="quickSelType('natacao-livre')" id="qtb-natacao-livre"><span>🌊</span><span>Livre</span></button>
             <button class="quick-type-btn" onclick="quickSelType('reformer')" id="qtb-reformer"><span>🧘</span><span>Pilates</span></button>
-            <button class="quick-type-btn" onclick="quickSelType('funcional")" id="qtb-funcional"><span>💪</span><span>Funcional</span></button>
+            <button class="quick-type-btn" onclick="quickSelType('funcional')" id="qtb-funcional"><span>💪</span><span>Funcional</span></button>
             <button class="quick-type-btn" onclick="quickSelType('outra')" id="qtb-outra"><span>✏️</span><span>Outra</span></button>
           </div>
           <div id="quick-outra-field" style="display:none;margin-bottom:10px">
@@ -727,6 +727,9 @@ window.quickSelType=function(t){
   document.querySelectorAll('.quick-type-btn').forEach(function(b){b.classList.remove('selected')});
   document.getElementById('qtb-'+t).classList.add('selected');
   document.getElementById('quick-outra-field').style.display=t==='outra'?'block':'none';
+  // Default durations per activity
+  var defaults={'natacao-aula':'40','natacao-livre':'60','reformer':'50','funcional':'60','outra':'60'};
+  document.getElementById('quick-dur').value=defaults[t]||'60';
 };
 window.quickSave=async function(){
   if(!quickType_){showToast('⚠️ Escolhe uma atividade');return}
@@ -1097,6 +1100,27 @@ function renderWeightAnalysis(sorted){
   var currentBmi=calcBMI(last.kg,hh);
   var kgToIdeal=last.kg>parseFloat(idealMax)?last.kg-parseFloat(idealMax):0;
 
+  // Latest body composition from Withings
+  var lastFat=bodyMetrics.fat.length>0?bodyMetrics.fat[bodyMetrics.fat.length-1]:null;
+  var lastMus=bodyMetrics.muscle.length>0?bodyMetrics.muscle[bodyMetrics.muscle.length-1]:null;
+  // Muscle in kg → convert to % using last weight
+  var musPercent=null;
+  if(lastMus&&last.kg>0){
+    if(lastMus.unit==='kg') musPercent=Math.round(lastMus.val/last.kg*1000)/10;
+    else musPercent=lastMus.val;
+  }
+
+  // Body composition section
+  var bodyComp='';
+  if(lastFat||lastMus){
+    bodyComp='<div style="height:1px;background:var(--border2);margin:4px 0"></div>'
+      +'<div style="padding:10px 16px 4px;font-size:11px;font-weight:600;letter-spacing:0.5px;color:var(--muted);text-transform:uppercase">Composição corporal (Withings)</div>'
+      +(lastFat?statRow('% Gordura',lastFat.val.toFixed(1),'%',lastFat.val>30?'var(--red)':lastFat.val>25?'var(--amber)':'var(--green)'):'')
+      +(musPercent!==null?statRow('% Músculo',musPercent.toFixed(1),'%',musPercent>35?'var(--green)':musPercent>28?'var(--amber)':'var(--red)'):'')
+      +(lastMus&&lastMus.unit==='kg'?statRow('Massa muscular',lastMus.val.toFixed(1),'kg','var(--teal)'):'')
+      +(lastFat?'<div style="padding:4px 16px 10px;font-size:10px;color:var(--muted)">Última medição: '+fmtD(lastFat.date)+'</div>':'');
+  }
+
   wrap.innerHTML='<div class="card" style="margin:0 16px 12px;overflow:hidden">'
     +statRow('Variação 7 dias',fmtDiff(d7),'kg',diffColor(d7))
     +statRow('Variação 30 dias',fmtDiff(d30),'kg',diffColor(d30))
@@ -1111,6 +1135,7 @@ function renderWeightAnalysis(sorted){
     +statRow('IMC atual',currentBmi.toFixed(1),'',bmiBand(currentBmi).color)
     +statRow('Intervalo saudável',idealMin+'–'+idealMax,'kg','var(--muted)')
     +(kgToIdeal>0?statRow('A perder para ideal',kgToIdeal.toFixed(1),'kg','var(--amber)'):'<div style="padding:10px 16px;font-size:12px;color:var(--green)">✅ Dentro do intervalo saudável!</div>')
+    +bodyComp
     +'<div style="padding:8px 16px 12px;font-size:11px;color:var(--muted)">'+sorted.length+' registo'+(sorted.length>1?'s':'')+' · desde '+fmtD(first.date)+'</div>'
     +'</div>';
 }
